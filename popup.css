@@ -1,0 +1,114 @@
+body,
+input {
+    color: white;
+    width: max-content;
+    background-color: #302c2c;
+    text-align: center;
+    font-size: 14px;
+    font-family: monospace, monospace;
+}
+
+svg {
+    transition: all 0.3s;
+    height: 20px;
+    width: 20px;
+    padding: 0px;
+    fill: white;
+    stroke: none;
+    fill-rule: evenodd;
+}
+
+hr,
+.combined-button-wrapper {
+    margin-left: 10px;
+    margin-right: 10px;
+}
+
+#header,
+#status-bar {
+    user-select: none;
+    font-weight: bold;
+}
+
+#header {
+    font-size: 25px;
+    padding: 0px;
+    margin: 0px;
+}
+
+.button,
+.combined-button,
+.combined-button-text,
+.combined-button-wrapper {
+    height: 20px;
+}
+
+.button,
+.combined-button,
+.combined-button-text {
+    transition: all 0.3s;
+    user-select: none;
+    border-color: white;
+    border-style: solid;
+    border-width: 1px;
+    padding: 5px;
+    line-height: 20px;
+}
+
+.combined-button,
+.combined-button-text {
+    float: left;
+    margin-bottom: 10px;
+}
+
+.button {
+    cursor: pointer;
+    margin: 10px;
+}
+
+.combined-button-text {
+    margin: 0px;
+    width: 120px;
+}
+
+.combined-button {
+    cursor: pointer;
+    margin-left: -1px;
+    margin-right: 0px;
+    width: 20px;
+}
+
+.button:hover,
+.combined-button:hover {
+    transition: all 0.3s;
+    color: white;
+    background-color: #4d4646;
+}
+
+.button:active,
+.combined-button:active {
+    transition: all 0.3s;
+    color: #302c2c;
+    background-color: white;
+
+}
+
+.combined-button:active svg {
+    transition: all 0.3s;
+    fill: #302c2c;
+}
+
+#input-resolution {
+    transition: all 0.3s;
+    width: 70%;
+    outline: 0;
+    border-width: 0px;
+    border-bottom-width: 1px;
+    border-color: grey;
+    padding-bottom: 5px;
+}
+
+#input-resolution:focus {
+    transition: all 0.3s;
+    border-color: white;
+}

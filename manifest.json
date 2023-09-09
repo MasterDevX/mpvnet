@@ -1,0 +1,25 @@
+{
+	"name": "mpvnet",
+    "description": "Play / download media across different websites with mpv / yt-dlp",
+    "author": "MasterDevX",
+    "version": "1.0",
+    "manifest_version": 3,
+    "permissions": [
+        "nativeMessaging",
+        "tabs"
+    ],
+    "action": {
+        "default_popup": "popup.html"
+    },
+    "icons": {
+    	"16": "/img/icon-16.png",
+    	"32": "/img/icon-32.png",
+    	"48": "/img/icon-48.png",
+    	"128": "/img/icon-128.png"
+    },
+    "browser_specific_settings": {
+        "gecko": {
+            "id": "mpvnet@masterdevx"
+        }
+    }
+}

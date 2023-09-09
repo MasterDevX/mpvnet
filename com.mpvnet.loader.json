@@ -1,0 +1,9 @@
+{
+    "name": "com.mpvnet.loader",
+    "description": "System-side backend for mpvnet",
+    "path": "/home/#USER/.mozilla/native-messaging-hosts/com.mpvnet.loader.py",
+    "type": "stdio",
+    "allowed_extensions": [
+        "mpvnet@masterdevx"
+    ]
+}

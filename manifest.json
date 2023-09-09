@@ -16,10 +16,5 @@
     	"32": "/img/icon-32.png",
     	"48": "/img/icon-48.png",
     	"128": "/img/icon-128.png"
-    },
-    "browser_specific_settings": {
-        "gecko": {
-            "id": "mpvnet@masterdevx"
-        }
     }
 }

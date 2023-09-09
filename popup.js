@@ -13,12 +13,12 @@ function updateStatus (status, color) {
 
 function runLoader (cmdline) {
     updateStatus("Running command", "#3dc200")
-    browser.tabs.query({
+    chrome.tabs.query({
         active: true,
         lastFocusedWindow: true
     }, function (tabs) {
         var url = tabs[0].url;
-        var port = browser.runtime.connectNative("com.mpvnet.loader");
+        var port = chrome.runtime.connectNative("com.mpvnet.loader");
         port.onMessage.addListener(function (msg) {
             if (msg.text == "return_normal") {
                 updateStatus("Ready", "#3dc200")

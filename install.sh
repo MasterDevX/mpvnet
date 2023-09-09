@@ -3,18 +3,23 @@
 REQS="
 ^python[0-9]*$
 ^python-pyqt5$
-^firefox.*$
+^google-chrome.*$
 ^ffmpeg$
 ^yt-dlp$
 ^mpv$
-^zip$
 "
 
+calc_ID () {
+    SHA="$(pwd | tr -d '\n' | sha256sum | cut -c 1-32)"
+    for (( i=0; i < ${#SHA}; i++ )); do
+        printf "\x$(printf %x $(printf %d $(( 16#${SHA:$i:1} + 97 ))))"
+    done
+}
+
+ID="$(calc_ID)"
 USER="$(whoami)"
 LOADER="com.mpvnet.loader"
-LOADER_PATH="/home/${USER}/.mozilla/native-messaging-hosts/"
-EXTENSION="mpvnet.xpi"
-FF_BIN="firefox"
+LOADER_PATH="/home/${USER}/.config/google-chrome/NativeMessagingHosts/"
 
 echo "[*] Checking for requirements..."
 for REQ in $REQS; do
@@ -23,29 +28,18 @@ for REQ in $REQS; do
         echo -e "\nNo package matching regex: \"$REQ\", exiting..."
         exit 1
     fi
-    if echo "$REQ_GREP" | grep -q "firefox"; then
-        FF_BIN="$REQ_GREP"
-    fi
 done
 
 echo "[*] Installing loader..."
 mkdir -p $LOADER_PATH
 cat ${LOADER}.json \
-    | sed -e "s/#USER/${USER}/g;" \
+    | sed -e "s/#USER/${USER}/g; s/#ID/${ID}/g;" \
     > ${LOADER_PATH}${LOADER}.json
 cp ${LOADER}.py $LOADER_PATH
 chmod +x ${LOADER_PATH}${LOADER}.py
 
-echo "[*] Building extension..."
-zip -qr $EXTENSION \
-    img \
-    manifest.json \
-    popup.{html,css,js} \
-
-echo "[*] Installing extension..."
-$FF_BIN $EXTENSION
-
 echo -e "\nDone!"
-echo -e "A Firefox popup window should be opened by now."
-echo -e "Click \"Add\" to complete the installation."
+echo -e "In Chrome navigate to 'Extensions' > 'Manage Extensions'."
+echo -e "Enable 'Developer Mode' and click 'Load Unpacked'."
+echo -e "Select mpvnet directory to complete the installation."
 exit 0

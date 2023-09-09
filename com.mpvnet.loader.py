@@ -67,6 +67,8 @@ def send_msg(msg):
     sys.stdout.buffer.flush()
 
 def run_loader(loader_args_raw):
+    sys.stdout = open(os.devnull, 'w')
+    os.environ['LD_PRELOAD'] = '/usr/lib/libvulkan.so.1'
     os.chdir(os.path.expanduser("~"))
     loader_args = loader_args_raw.split()
     mpv_tail = f'--ytdl-format=\'{loader_args[2]}\' \'{loader_args[3]}\''
@@ -78,8 +80,7 @@ def run_loader(loader_args_raw):
         try:
             media_info = ydl.extract_info(loader_args[3], download=False)
         except yt_dlp.utils.DownloadError:
-            send_msg('return_error_invalid_url')
-            sys.exit(0)
+            stop_loader(0, 'return_error_invalid_url')
     if loader_args[0] == 'mpv':
         if loader_args[1] == 'video':
             sp.Popen(f'mpv --geometry=x50% {mpv_tail}', shell=True)
@@ -87,12 +88,14 @@ def run_loader(loader_args_raw):
             sp.Popen(f'konsole -e "mpv --no-video {mpv_tail}"', shell=True)
     else:       
         tracker = DLoadTracker()
-        path_chooser = DLoadPathChooser(media_info['title'].replace('/', '_'))
+        title = media_info['title']
+        for symbol in ['/', '"', '\'']:
+            title = title.replace(symbol, '_')
+        path_chooser = DLoadPathChooser(title)
         path_chooser.choose_path()
         if not path_chooser.path:
             tracker.terminate('Action cancelled')
-            send_msg('return_normal')
-            sys.exit(0)
+            stop_loader(0, 'return_normal')
         ydl_opts.update({
             'format': loader_args[2],
             'progress_hooks': [tracker.progress_hook],
@@ -117,11 +120,16 @@ def run_loader(loader_args_raw):
             try:
                 ydl.download(loader_args[3])
             except dbus.exceptions.DBusException:
-                send_msg('return_normal')
-                sys.exit(0)
+                stop_loader(0, 'return_normal')
         tracker.terminate('Download complete')
-    send_msg('return_normal')
-    sys.exit(0)
+    stop_loader(0, 'return_normal')
+
+def stop_loader (return_code, return_msg):
+    sys.stdout.close()
+    sys.stdout = sys.__stdout__
+    send_msg(return_msg)
+    sys.exit(return_code)
+
 
 if __name__ == '__main__':
     loader_proc = Process(target=run_loader, args=(recv_msg(),))

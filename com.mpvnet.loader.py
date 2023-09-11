@@ -2,45 +2,91 @@
 
 import os
 import sys
-import dbus
 import struct
 import yt_dlp
 
 import subprocess as sp
 
 from multiprocessing import Process
-from PyQt5.QtWidgets import QApplication, QFileDialog
+
+from PyQt5.QtCore import (
+    QThread,
+    pyqtSignal
+)
+
+from PyQt5.QtWidgets import(
+    QLabel,
+    QWidget,
+    QFileDialog,
+    QPushButton,
+    QVBoxLayout,
+    QProgressBar,
+    QApplication
+)
 
 PREFER_EXT = {
     'video': 'mp4',
     'audio': 'mp3'
 }
 
-class DLoadTracker:
-    def __init__ (self):
-        self.bus = dbus.SessionBus()
-        self.interface = 'org.kde.JobViewV2'
-        self.server = self.bus.get_object('org.kde.kuiserver', '/JobViewServer')
-        self.path = self.server.requestView('mpvnet', 'download', 1)
-        self.job = self.bus.get_object('org.kde.kuiserver', self.path)
-        self.set_info('Initializing...')
+class DLoader (QWidget):
+    def __init__ (self, url, ydl_opts, info):
+        super().__init__()
+        self.info_label = QLabel()
+        self.info_label.setText(info)
+        self.progress_bar = QProgressBar()
+        self.progress_bar.setValue(0)
+        self.cancel_button = QPushButton('Cancel')
+        self.cancel_button.clicked.connect(self.cancel_download)
+        self.vbox = QVBoxLayout()
+        self.vbox.addWidget(self.info_label)
+        self.vbox.addWidget(self.progress_bar)
+        self.vbox.addWidget(self.cancel_button)
+        self.thread = DLoaderThread(url, ydl_opts)
+        self.thread.signal_progress.connect(self.set_progress)
+        self.setWindowTitle('mpvnet')
+        self.setFixedSize(self.sizeHint())
+        self.setLayout(self.vbox)
+        self.show()
+
+    def start_download (self):
+        self.thread.start()
+
+    def cancel_download (self):
+        self.thread.interrupt = True
 
     def set_progress (self, progress):
-        self.job.setPercent(progress, dbus_interface=self.interface)
+        self.progress_bar.setValue(progress)
 
-    def set_info (self, info):
-        self.job.setInfoMessage(info, dbus_interface=self.interface)
+class DLoaderThread (QThread):
+    signal_progress = pyqtSignal(int)
+    def __init__ (self, url, ydl_opts):
+        super().__init__()
+        self.url = url
+        self.ydl_opts = ydl_opts
+        self.ydl_opts.update({
+            'progress_hooks': [self.progress_hook],
+        })
+        self.interrupt = False
 
-    def terminate (self, info):
-        self.job.terminate(info, dbus_interface=self.interface)
+    def run (self):
+        with yt_dlp.YoutubeDL(self.ydl_opts.copy()) as ydl:
+            try:
+                ydl.download(self.url)
+            except yt_dlp.DownloadCancelled:
+                pass
+            finally:
+                QApplication.quit()
 
     def progress_hook (self, stream):
         if stream['status'] == 'downloading':
+            if self.interrupt:
+                raise yt_dlp.DownloadCancelled
             progress = int(float(stream['_percent_str'].replace('%', '')))
             if progress >= 0 and progress <= 100:
-                self.set_progress(progress)
+                self.signal_progress.emit(progress)
 
-class DLoadPathChooser:
+class DLoaderPathChooser:
     def __init__ (self, default_path):
         self.path = None
         self.default_path = default_path
@@ -50,7 +96,7 @@ class DLoadPathChooser:
         dialog = QFileDialog()
         dialog.setAcceptMode(QFileDialog.AcceptSave)
         dialog.selectFile(self.default_path)
-        if dialog.exec_():
+        if dialog.exec():
             self.path = dialog.selectedFiles()[0]
 
 def recv_msg():
@@ -71,6 +117,7 @@ def run_loader(loader_args_raw):
     os.environ['LD_PRELOAD'] = '/usr/lib/libvulkan.so.1'
     os.chdir(os.path.expanduser("~"))
     loader_args = loader_args_raw.split()
+    mpv_head = f'mpv --profile=pseudo-gui --geometry=x50%'
     mpv_tail = f'--ytdl-format=\'{loader_args[2]}\' \'{loader_args[3]}\''
     ydl_opts = {
         'quiet': True,
@@ -83,22 +130,19 @@ def run_loader(loader_args_raw):
             stop_loader(0, 'return_error_invalid_url')
     if loader_args[0] == 'mpv':
         if loader_args[1] == 'video':
-            sp.Popen(f'mpv --geometry=x50% {mpv_tail}', shell=True)
+            sp.Popen(f'{mpv_head} {mpv_tail}', shell=True)
         else:
-            sp.Popen(f'konsole -e "mpv --no-video {mpv_tail}"', shell=True)
+            sp.Popen(f'{mpv_head} --no-video {mpv_tail}', shell=True)
     else:       
-        tracker = DLoadTracker()
         title = media_info['title']
         for symbol in ['/', '"', '\'']:
             title = title.replace(symbol, '_')
-        path_chooser = DLoadPathChooser(title)
+        path_chooser = DLoaderPathChooser(title)
         path_chooser.choose_path()
         if not path_chooser.path:
-            tracker.terminate('Action cancelled')
             stop_loader(0, 'return_normal')
         ydl_opts.update({
             'format': loader_args[2],
-            'progress_hooks': [tracker.progress_hook],
             'outtmpl': f'{path_chooser.path}.%(ext)s',
         })
         if loader_args[1] == 'video':
@@ -112,16 +156,14 @@ def run_loader(loader_args_raw):
                     'preferredcodec': PREFER_EXT['audio'],
                 }]
             })
-        tracker.set_info(
+        info_str = str(
             f'Downloading {loader_args[1]}: ' +
             f'"{path_chooser.path}.{PREFER_EXT[loader_args[1]]}"'
         )
-        with yt_dlp.YoutubeDL(ydl_opts.copy()) as ydl:
-            try:
-                ydl.download(loader_args[3])
-            except dbus.exceptions.DBusException:
-                stop_loader(0, 'return_normal')
-        tracker.terminate('Download complete')
+        app = QApplication([])
+        downloader = DLoader(loader_args[3], ydl_opts, info_str)
+        downloader.start_download()
+        app.exec()
     stop_loader(0, 'return_normal')
 
 def stop_loader (return_code, return_msg):

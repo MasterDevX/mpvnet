@@ -1,9 +1,6 @@
 ## mpvnet
 This is a Chrome / Firefox extension that allows you to play / download media across different websites with mpv / yt-dlp.
 
-## Note
-The project is currently on the very early stage of development and only works on distros with **KDE Plasma** desktop environment. Want this to change as soon as possible? Feel free to contribute!
-
 ## Features
 The project offers the following functionality:
 - Working on all linux distros
@@ -11,7 +8,6 @@ The project offers the following functionality:
 - Playing video / audio with mpv
 - Video / audio downloading
 - Setting video resolution limit
-- Integration with KDE Shell
 - Easy to use install system
 - Support for [tons of websites](https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md)
 

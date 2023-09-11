@@ -58,7 +58,7 @@ fi
 
 USER="$(whoami)"
 LOADER="com.mpvnet.loader"
-LOADER_PATH="/home/${USER}/.mozilla/native-messanging-hosts/"
+LOADER_PATH="/home/${USER}/.mozilla/native-messaging-hosts/"
 EXTENSION="mpvnet.xpi"
 
 AC_SUBST([FIREFOX])

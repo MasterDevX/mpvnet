@@ -1,6 +1,8 @@
 ## mpvnet
 This is a Chrome / Firefox extension that allows you to play / download media across different websites with mpv / yt-dlp.
 
+https://github.com/MasterDevX/mpvnet/assets/32103950/fcccfed8-1f59-4980-a483-e78f0e696c9d
+
 ## Features
 The project offers the following functionality:
 - Working on all linux distros
